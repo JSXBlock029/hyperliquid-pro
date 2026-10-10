@@ -46,7 +46,7 @@ pip install -r requirements-test.txt
 pytest tests
 ```
 
-60 unit tests cover the scalp stack's deterministic logic: EMA, RSI, ATR and volatility math checked against hand-computed values, order-book imbalance, the pre-trade gate, and validation of the LLM's trade plans. The suite never imports `server.py` (it connects to Hyperliquid on import), blocks the network and strips credentials, so it cannot place an order.
+58 unit tests cover the scalp stack's deterministic logic: EMA, RSI, ATR and volatility math checked against hand-computed values, order-book imbalance, the pre-trade gate, and validation of the LLM's trade plans. The suite never imports `server.py` (it connects to Hyperliquid on import), blocks the network and strips credentials, so it cannot place an order.
 
 One real bug was found and fixed this way: the model's `"enter"` and `"exit"` fields were read with Python's `bool()`, so a reply of `"enter": "false"` (a string) **opened a trade**, and `"exit": "false"` closed a position early. Only explicit true values count now.
 
