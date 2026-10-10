@@ -123,6 +123,22 @@ class Decision:
         return cls(False, 0.0, 0.0, 0.0, reason)
 
 
+_TRUE_STRINGS = {"true", "yes", "y", "1"}
+
+
+def _as_bool(value: Any) -> bool:
+    """Strict truthiness for model output. bool("false") is True in Python, so a model
+    replying "enter": "false" used to open a trade. Only explicit true values count;
+    anything else means no (no entry, no early exit)."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value == 1
+    if isinstance(value, str):
+        return value.strip().lower() in _TRUE_STRINGS
+    return False
+
+
 def _coerce(raw: Any, allow_zero_tp: bool = False) -> Decision:
     """Validate the model's JSON into a Decision.
 
@@ -139,7 +155,7 @@ def _coerce(raw: Any, allow_zero_tp: bool = False) -> Decision:
     if not isinstance(raw, dict):
         return Decision.refuse("agent: non-object response")
     try:
-        enter = bool(raw.get("enter", False))
+        enter = _as_bool(raw.get("enter", False))
         size = float(raw.get("size_pct", 0.0))
         stop = float(raw.get("stop_bps", 0.0))
         tp = float(raw.get("tp_bps", 0.0))
@@ -227,7 +243,7 @@ def decide_exit(position: dict) -> dict:
         return {"exit": False, "reason": "hold (no provider answered)"}
     parsed = _extract_json(res.text)
     if isinstance(parsed, dict):
-        return {"exit": bool(parsed.get("exit", False)),
+        return {"exit": _as_bool(parsed.get("exit", False)),
                 "reason": str(parsed.get("reason", ""))[:120],
                 "model": f"{res.provider}/{res.model}"}
     return {"exit": False, "reason": "hold (unparseable)"}

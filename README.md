@@ -39,9 +39,20 @@ The scalper runs in **paper mode by default**. It places real orders only when `
 - **Use an API wallet.** Hyperliquid API (agent) wallets can trade but cannot withdraw. Prefer one over your main key.
 - **Your address is public.** Anything traded from an address is visible on-chain. Keep your wallet addresses and keys in `.env`, which is git-ignored.
 
+## Tests
+
+```bash
+pip install -r requirements-test.txt
+pytest tests
+```
+
+60 unit tests cover the scalp stack's deterministic logic: EMA, RSI, ATR and volatility math checked against hand-computed values, order-book imbalance, the pre-trade gate, and validation of the LLM's trade plans. The suite never imports `server.py` (it connects to Hyperliquid on import), blocks the network and strips credentials, so it cannot place an order.
+
+One real bug was found and fixed this way: the model's `"enter"` and `"exit"` fields were read with Python's `bool()`, so a reply of `"enter": "false"` (a string) **opened a trade**, and `"exit": "false"` closed a position early. Only explicit true values count now.
+
 ## Known limitations
 
 - The server was written for one operator on Windows. Paths, process supervision and defaults assume that.
 - `server.py` is large and holds many concerns in one file. It has not been split up.
-- There is no automated test suite in this repository, and the project was not run as part of publishing it. Treat it as source to read and adapt rather than a packaged product.
+- The tests cover the pure scalp logic only. The server and live execution paths were not run as part of publishing; treat them as source to read and adapt.
 - Strategy parameters (`GIGA_*`, `SCALP_*`) are tuned defaults, not recommendations.
