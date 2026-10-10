@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.venv/
+venv*/
+*.log
+*.jsonl
+*.db
+scalp_edge_report.json
+*.bak*
+node_modules/

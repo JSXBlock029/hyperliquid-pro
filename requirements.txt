@@ -1,0 +1,12 @@
+flask
+flask-socketio
+hyperliquid-python-sdk
+eth-account
+python-dotenv
+requests
+urllib3
+numpy
+pandas
+matplotlib
+yfinance
+openai

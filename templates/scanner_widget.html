@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Crypto Scanner Widget</title>
+    <style>
+        .scanner-widget {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 12px;
+            padding: 20px;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            max-width: 400px;
+            margin: 20px auto;
+            box-shadow: 0 8px 32px rgba(0, 255, 255, 0.1);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+        }
+        .scanner-title {
+            color: #00ffff;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .scan-input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #00ffff;
+            border-radius: 6px;
+            color: #ffffff;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        .scan-button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(45deg, #00ffff, #0080ff);
+            border: none;
+            border-radius: 6px;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .alert-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 6px;
+            border-left: 3px solid #00ff00;
+        }
+    </style>
+</head>
+<body>
+    <div class="scanner-widget">
+        <h3 class="scanner-title">🔮 Crypto Scanner</h3>
+        <input type="text" class="scan-input" id="tokenAddress" placeholder="Enter token address...">
+        <button class="scan-button" onclick="scanToken()">🔍 Scan Token</button>
+        <div id="scanResult"></div>
+        <div id="alertsList"></div>
+    </div>
+    <script>
+        async function scanToken() {
+            const address = document.getElementById('tokenAddress').value;
+            const button = document.querySelector('.scan-button');
+            const result = document.getElementById('scanResult');
+            
+            if (!address.trim()) {
+                result.innerHTML = '<div style="color: red;">Please enter a token address</div>';
+                return;
+            }
+            
+            button.textContent = '🔄 Scanning...';
+            button.disabled = true;
+            result.innerHTML = '<div style="color: #00ffff;">Analyzing token...</div>';
+            
+            try {
+                const response = await fetch('/api/scanner/scan-token', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({address})
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    const token = data.data;
+                    const changeClass = token.change_24h >= 0 ? 'color: #00ff00' : 'color: #ff4444';
+                    const changeSymbol = token.change_24h >= 0 ? '+' : '';
+                    const patterns = token.patterns && token.patterns.length > 0 ? token.patterns.join(', ') : 'None';
+                    
+                    result.innerHTML = `
+                        <div class="alert-item">
+                            <div style="color: #00ffff; font-weight: bold; font-size: 16px;">${token.symbol}</div>
+                            <div style="color: #aaa; font-size: 12px; margin: 3px 0;">${token.name}</div>
+                            <div style="color: #fff; margin: 5px 0;">Price: $${token.price.toFixed(8)}</div>
+                            <div style="${changeClass}; font-weight: bold;">
+                                24h Change: ${changeSymbol}${token.change_24h.toFixed(2)}%
+                            </div>
+                            <div style="color: #ffff00; margin: 5px 0;">
+                                Confidence: ${token.confidence}/10 | Grade: ${token.liquidity_grade}
+                            </div>
+                            <div style="font-size: 11px; color: #aaa;">
+                                Volume: $${token.volume_24h.toLocaleString()} | Liquidity: $${token.liquidity_usd.toLocaleString()}
+                            </div>
+                            <div style="font-size: 11px; color: #ffff00; margin-top: 3px;">
+                                Patterns: ${patterns}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    result.innerHTML = `<div style="color: red;">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div style="color: red;">Network error: ${error.message}</div>`;
+            } finally {
+                button.textContent = '🔍 Scan Token';
+                button.disabled = false;
+            }
+        }
+        
+        // Load alerts on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                const response = await fetch('/api/scanner/latest-alerts');
+                const data = await response.json();
+                
+                if (data.alerts && data.alerts.length > 0) {
+                    const alertsHtml = data.alerts.map(alert => {
+                        const changeClass = alert.change_24h >= 0 ? 'color: #00ff00' : 'color: #ff4444';
+                        const changeSymbol = alert.change_24h >= 0 ? '+' : '';
+                        return `
+                            <div class="alert-item">
+                                <div style="color: #00ffff; font-weight: bold;">${alert.symbol}</div>
+                                <div style="color: #fff;">$${alert.price.toFixed(8)}</div>
+                                <div style="${changeClass};">${changeSymbol}${alert.change_24h.toFixed(2)}%</div>
+                                <div style="color: #ffff00; font-size: 12px;">Confidence: ${alert.confidence}/10</div>
+                            </div>
+                        `;
+                    }).join('');
+                    document.getElementById('alertsList').innerHTML = 
+                        '<h4 style="color: #ffff00; margin: 20px 0 10px 0;">🚨 Latest Alerts</h4>' + alertsHtml;
+                } else {
+                    document.getElementById('alertsList').innerHTML = 
+                        '<h4 style="color: #ffff00; margin: 20px 0 10px 0;">🚨 Latest Alerts</h4><div style="color: #888;">No alerts yet - scan some tokens!</div>';
+                }
+            } catch (error) {
+                document.getElementById('alertsList').innerHTML = 
+                    '<h4 style="color: #ffff00; margin: 20px 0 10px 0;">🚨 Latest Alerts</h4><div style="color: red;">Error loading alerts</div>';
+            }
+        });
+        
+        // Allow Enter key to scan
+        document.getElementById('tokenAddress').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                scanToken();
+            }
+        });
+    </script>
+</body>
+</html> 
