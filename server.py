@@ -94,21 +94,27 @@ app = Flask(__name__, static_folder='public', static_url_path='')
 
 
 # --- Access control -------------------------------------------------------------
-# Order, close and scalp-toggle routes move real money. Requests from the local machine
-# are trusted (the bundled UI runs there). State-changing requests from anywhere else
-# must carry HLPRO_API_TOKEN, as an "X-API-Token" header or a "?token=" query parameter
-# (TradingView webhooks cannot set headers, so use the query form there). With no token
-# configured, remote writes are refused outright.
+# Order, close and scalp-toggle routes move real money. Requests that originate on this
+# machine (and did not pass through a proxy or tunnel) are trusted. Every state-changing
+# request from anywhere else must carry HLPRO_API_TOKEN as an "X-API-Token" header or "?token=".
+# Anything arriving with forwarded-for headers is treated as remote, so a Cloudflare
+# tunnel or reverse proxy in front of the app does not bypass the check.
 import hmac as _hmac
 
 _LOCAL_ADDRS = {"127.0.0.1", "::1"}
 
 
+def _is_local_request():
+    if request.headers.get("X-Forwarded-For") or request.headers.get("Cf-Connecting-Ip") or request.headers.get("Forwarded"):
+        return False
+    return request.remote_addr in _LOCAL_ADDRS
+
+
 @app.before_request
 def _require_token_for_remote_writes():
-    if request.method in ("GET", "HEAD", "OPTIONS") or request.remote_addr in _LOCAL_ADDRS:
+    if request.method in ("GET", "HEAD", "OPTIONS") or _is_local_request():
         return None
-    expected = os.getenv("HLPRO_API_TOKEN", "")
+    expected = os.environ.get("HLPRO_API_TOKEN", "")
     supplied = request.headers.get("X-API-Token") or request.args.get("token", "")
     if expected and supplied and _hmac.compare_digest(supplied.encode(), expected.encode()):
         return None

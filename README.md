@@ -35,7 +35,7 @@ The scalper runs in **paper mode by default**. It places real orders only when `
 ## Safety notes
 
 - **Order routes are live.** `/api/order`, `/api/buy`, `/api/sell`, `/api/close-position`, `/api/close-all-positions` and the TradingView `/webhook` act on your account whenever API-wallet credentials are configured. The scalper's paper mode does not apply to them.
-- **Network exposure.** The server binds to `127.0.0.1`. State-changing requests from any other address are rejected unless they carry `HLPRO_API_TOKEN` (header `X-API-Token` or `?token=`). Do not put it behind a same-host reverse proxy without adding your own authentication, because the proxy's connections look local.
+- **Network exposure.** The server binds to `127.0.0.1`. State-changing requests from any other address, or that pass through a proxy or tunnel (anything carrying forwarded-for headers), are rejected unless they carry `HLPRO_API_TOKEN` (header `X-API-Token` or `?token=`).
 - **Use an API wallet.** Hyperliquid API (agent) wallets can trade but cannot withdraw. Prefer one over your main key.
 - **Your address is public.** Anything traded from an address is visible on-chain. Keep your wallet addresses and keys in `.env`, which is git-ignored.
 
