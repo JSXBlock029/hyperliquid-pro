@@ -1,5 +1,7 @@
 # Hyperliquid Pro (HLPRO2)
 
+[![CI](https://github.com/lowriskbtc/hyperliquid-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/lowriskbtc/hyperliquid-pro/actions/workflows/ci.yml) ![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-3776AB?logo=python&logoColor=white) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 A self-hosted trading terminal for [Hyperliquid](https://hyperliquid.xyz) perpetuals: a Flask and Socket.IO server with a web UI for positions, orders and charts, a TradingView webhook receiver, a backtester, and an automated scalping stack that can use a local LLM to judge entries and exits.
 
 > This is personal trading software, shared as source. It can place real orders with real money. Read the code before pointing it at a funded account, and start in paper mode. Nothing here is financial advice, and no performance is claimed.
